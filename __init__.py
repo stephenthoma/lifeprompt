@@ -1,9 +1,8 @@
 from flask import Flask, request, redirect
 from twilio.rest import TwilioRestClient
 import speech_recognition as sr
-from datetime import datetime
+import datetime, os, urllib
 import twilio.twiml
-import os, urllib
 
 app = Flask(__name__)
 
@@ -81,14 +80,17 @@ def handle_key():
 def handle_recording():
     """Retrieve and store WAV and TXT versions of the recorded entry."""
     resp = twilio.twiml.Response()
+    curr_time = (datetime.datetime.utcnow() -
+                 datetime.timedelta(hours=7)).strftime("%d.%m.%Y")
+
     recording_url = request.values.get("RecordingUrl", None)
     recording_file = urllib.urlretrieve(recording_url,
                                         "{0}entries/{1}.wav"
-                                        .format(BASE, datetime.utcnow()))
+                                        .format(BASE, curr_time))
 
     transcription = transcribe_recording(recording_file[0])
     print transcription
-    with open(recording_file[0][0:-3] + 'txt', 'w') as ts_file:
+    with open(curr_time + '.txt', 'w') as ts_file:
         ts_file.write(transcription)
 
     resp.say("Entry stored. Goodbye.")
